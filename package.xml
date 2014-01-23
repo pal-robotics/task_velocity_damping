@@ -1,0 +1,26 @@
+<package>
+  <name>task_velocity_damping</name>
+  <version>1.0.0</version>
+  <description>
+    Velocity Damping which enables repulsive forces around a center point. Used for collision avoidance
+  </description>
+  <maintainer email="karsten.knese@googlemail.com">Karsten Knese</maintainer>
+  <license>BSD</license>
+
+  <author>Karsten Knese </author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>sot-core</build_depend>
+  <build_depend>jrl-mal</build_depend>
+  <build_depend>jrl-mathtool</build_depend>
+  <build_depend>dynamic-graph</build_depend>
+  <build_depend>dynamic-graph-python</build_depend>
+
+  <run_depend>sot-core</run_depend>
+  <run_depend>jrl-mal</run_depend>
+  <run_depend>jrl-mathtool</run_depend>
+  <run_depend>dynamic-graph</run_depend>
+  <run_depend>dynamic-graph-python</run_depend>
+
+</package>
