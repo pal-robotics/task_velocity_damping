@@ -55,34 +55,36 @@ public: /* --- ENTITY INHERITANCE --- */
 
 public:  /* --- SIGNALS --- */
 
-    DECLARE_SIGNAL_IN(p1,sot::MatrixHomogeneous);
-    DECLARE_SIGNAL_IN(p2,sot::MatrixHomogeneous);
-    DECLARE_SIGNAL_IN(jVel,ml::Matrix);
     DECLARE_SIGNAL_IN(dt,double);
     DECLARE_SIGNAL_IN(controlGain,double);
-    DECLARE_SIGNAL_IN(selec,Flags);
     DECLARE_SIGNAL_IN(di,double);
     DECLARE_SIGNAL_IN(ds,double);
-    DECLARE_SIGNAL_OUT(distance, double);
-    DECLARE_SIGNAL_OUT(n,ml::Vector);
-    DECLARE_SIGNAL_OUT(v,ml::Vector);
 //    DECLARE_SIGNAL_OUT(activeSize,int);
 
 public:  /* --- COMPUTATION --- */
+
+
     dg::sot::VectorMultiBound& computeTask( dg::sot::VectorMultiBound& res,int time );
     ml::Matrix& computeJacobian( ml::Matrix& J,int time );
-    double& computeDistance(double& res, int time);
-    ml::Vector& computeN(ml::Vector& res, int time);
-    ml::Vector& computeV(ml::Vector& res, int time);
-//    void setDistanceVector(const ml::Vector& distanceIn);
-private:
-//    double di;
-//    double distance;
-//    double ds;
-    double calculateDistance(sot::MatrixHomogeneous p1, sot::MatrixHomogeneous p2);
-    ml::Vector calculateDirectionalVector(sot::MatrixHomogeneous p1,sot::MatrixHomogeneous p2);
-    ml::Vector calculateUnitVector(sot::MatrixHomogeneous p1,sot::MatrixHomogeneous p2);
 
+private:
+
+    // input signals for P1
+    std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Vector, int> > > p1_vec;
+    // input signals for p2
+    std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Vector, int> > > p2_vec;
+    // input signals for jacobians of p1
+    std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Matrix, int> > > jVel_vec;
+
+    void split(std::vector<std::string> &tokens, const std::string &text, char sep) const;
+
+    void set_avoiding_objects(const std::string& avoiding_objects);
+
+    double calculateDistance(dynamicgraph::Vector p1, dynamicgraph::Vector p2);
+    ml::Vector calculateDirectionalVector(dynamicgraph::Vector p1,dynamicgraph::Vector p2);
+    ml::Vector calculateUnitVector(dynamicgraph::Vector p1,dynamicgraph::Vector p2);
+
+    int avoidance_size_;
 }; // class TaskVelocityDamping
 
 } // namespace sot

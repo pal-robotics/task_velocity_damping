@@ -1,6 +1,6 @@
 from dynamic_graph.sot.core.meta_task_6d import MetaTask6d,toFlags
 from dynamic_graph.sot.core.task_velocity_damping import TaskVelocityDamping
-from dynamic_graph.sot.core.dyn_op_point_modifier import DynamicOpPointModifier
+from dynamic_graph.sot.core.dyn_oppoint_modifier import DynamicOppointModifier
 from dynamic_graph.sot.core.meta_task_velocity_damping import MetaTaskVelocityDamping
 
 from dynamic_graph import plug
@@ -12,7 +12,7 @@ import numpy
 class MetaTaskOpModVelocityDamping(MetaTaskVelocityDamping):
 
     def createOpPointModif(self):
-	self.opPointModif = DynamicOpPointModifier('dynopmodif'+self.name)
+	self.opPointModif = DynamicOppointModifier('dynopmodif'+self.name)
 	offset=numpy.eye(4)
 	offset[0:3,3] = (0.0,0.0,0.0)
 	self.opPointModif.setTransformation(matrixToTuple(offset))

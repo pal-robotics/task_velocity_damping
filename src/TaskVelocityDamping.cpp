@@ -30,6 +30,7 @@
 
 #include <sot/core/matrix-homogeneous.hh>
 #include <dynamic-graph/TaskVelocityDamping/TaskVelocityDamping.hh>
+#include <dynamic-graph/TaskVelocityDamping/SignalHelper.h>
 
 /* --------------------------------------------------------------------- */
 /* --- CLASS ----------------------------------------------------------- */
@@ -42,6 +43,10 @@ namespace sot
 
 namespace dg = ::dynamicgraph;
 
+typedef SignalTimeDependent < dynamicgraph::Matrix, int > SignalTimeMatrix;
+typedef SignalTimeDependent < dynamicgraph::Vector, int > SignalTimeVector;
+typedef SignalPtr<dynamicgraph::Vector, int > SignalPtrVector;
+typedef SignalPtr<dynamicgraph::Matrix, int > SignalPtrMatrix;
 
 /* --- DG FACTORY ------------------------------------------------------- */
 DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(TaskVelocityDamping,"TaskVelocityDamping");
@@ -61,107 +66,96 @@ TaskVelocityDamping::TaskVelocityDamping( const std::string & name )
     : TaskAbstract(name)
 
 //    p1 is considered as the moving point
-    ,CONSTRUCT_SIGNAL_IN(p1,sot::MatrixHomogeneous)
 //    p2 is considered as being fixed/static
-    ,CONSTRUCT_SIGNAL_IN(p2,sot::MatrixHomogeneous)
-    ,CONSTRUCT_SIGNAL_IN(jVel,ml::Matrix)
     ,CONSTRUCT_SIGNAL_IN(dt,double)
     ,CONSTRUCT_SIGNAL_IN(controlGain,double)
-    ,CONSTRUCT_SIGNAL_IN(selec,Flags)
     ,CONSTRUCT_SIGNAL_IN(di, double)
     ,CONSTRUCT_SIGNAL_IN(ds, double)
-    ,distanceSOUT("TaskVelocityDamping("+name+")::output(double)::distance")
-    ,nSOUT("TaskVelocityDamping("+name+")::output(ml::Vector)::n")
-    ,vSOUT("TaskVelocityDamping("+name+")::output(ml::Vector)::v")
-
 
 {
+
+    // initialize which collision pairs should be on the same hierarchy level
+    std::string docstring;
+    docstring =
+            "\n"
+            "    Initializes collisions for task avoidance\n"
+            "      takes a string of signal names (separated by :) for collision pairs \n"
+            "     and creates a signal input socket (p1,p2, jVel_p1) for each collision object"
+            "\n";
+    addCommand(std::string("set_avoiding_objects"),
+               new dynamicgraph::command::Setter<TaskVelocityDamping, std::string >
+               (*this, &TaskVelocityDamping::set_avoiding_objects, docstring));
+
     taskSOUT.setFunction( boost::bind(&TaskVelocityDamping::computeTask,this,_1,_2) );
     jacobianSOUT.setFunction( boost::bind(&TaskVelocityDamping::computeJacobian,this,_1,_2) );
-    distanceSOUT.setFunction(boost::bind(&TaskVelocityDamping::computeDistance, this, _1, _2));
-    nSOUT.setFunction(boost::bind(&TaskVelocityDamping::computeN, this, _1, _2));
-    vSOUT.setFunction(boost::bind(&TaskVelocityDamping::computeV, this, _1, _2));
-
-    taskSOUT.clearDependencies();
-    taskSOUT.addDependency(p1SIN );
-    taskSOUT.addDependency(p2SIN);
-    taskSOUT.addDependency(distanceSOUT);
-
-    taskSOUT.addDependency( dtSIN );
-    taskSOUT.addDependency(dsSIN);
-    taskSOUT.addDependency(diSIN);
-    taskSOUT.addDependency(controlGainSIN);
-
-    jacobianSOUT.clearDependencies();
-    jacobianSOUT.addDependency(p1SIN);
-    jacobianSOUT.addDependency(p2SIN);
-    jacobianSOUT.addDependency(nSOUT);
-
-    distanceSOUT.clearDependencies();
-    distanceSOUT.addDependency(p1SIN);
-    distanceSOUT.addDependency(p2SIN);
-
-    nSOUT.clearDependencies();
-    nSOUT.addDependency(p1SIN);
-    nSOUT.addDependency(p2SIN);
-
-    vSOUT.clearDependencies();
-    vSOUT.addDependency(p1SIN);
-    vSOUT.addDependency(p2SIN);
 
     controlGainSIN = 1.0;
 
-    // Commands
-    std::string docstring;
-
-    // setVelocity
-    docstring =
-            "\n"
-            " Insert a distance vector for damping the velocity in proportion to distance."
-            "\n";
-
-    signalRegistration(p1SIN << p2SIN << jVelSIN << dtSIN << controlGainSIN << diSIN << dsSIN << distanceSOUT << nSOUT << vSOUT);
+    signalRegistration( dtSIN << controlGainSIN << diSIN << dsSIN );
 
 }
-double& TaskVelocityDamping::computeDistance(double& res, int time)
-{
-    const sot::MatrixHomogeneous& p1 = p1SIN(time);
-    const sot::MatrixHomogeneous& p2 = p2SIN(time);
-    res = calculateDistance(p1, p2);
-    distanceSOUT.setConstant(res);
-    return res;
+
+void TaskVelocityDamping::split(std::vector<std::string> &tokens, const std::string &text, char sep) const {
+    int start = 0, end = 0;
+    while ((end = text.find(sep, start)) != std::string::npos) {
+        tokens.push_back(text.substr(start, end - start));
+        start = end + 1;
+    }
+    tokens.push_back(text.substr(start));
 }
 
-ml::Vector& TaskVelocityDamping::computeN(ml::Vector& res, int time)
-{
-    const sot::MatrixHomogeneous & p1 = p1SIN(time);
-    const sot::MatrixHomogeneous & p2 = p2SIN(time);
-    res = calculateUnitVector(p1, p2);
-    nSOUT.setConstant(res);
-    return res;
-}
 
-ml::Vector& TaskVelocityDamping::computeV(ml::Vector& res, int time)
+void TaskVelocityDamping::set_avoiding_objects(const std::string& avoiding_objects_string)
 {
-    const sot::MatrixHomogeneous & p1 = p1SIN(time);
-    const sot::MatrixHomogeneous & p2 = p2SIN(time);
-    res = calculateDirectionalVector(p1, p2);
-    vSOUT.setConstant(res);
-    return res;
+    std::cerr << "received avoiding objects: " << avoiding_objects_string <<std::endl;
+    std::vector<std::string> avoidance_objects;
+    split(avoidance_objects, avoiding_objects_string, ':');
+    std::cerr << "will register objects: " << avoidance_objects.size();
+
+    avoidance_size_  = avoidance_objects.size();
+    p1_vec.resize(avoidance_size_);
+    p2_vec.resize(avoidance_size_);
+    jVel_vec.resize(avoidance_size_);
+
+    for (int var = 0; var < avoidance_size_; ++var) {
+
+        boost::shared_ptr<SignalPtrVector> p1_signal  = SignalHelper::createInputSignalVector("p1_"+avoidance_objects[var]);
+        signalRegistration(*p1_signal );
+        p1_vec[var] = p1_signal;
+        std::cerr << "registered p1 signal: p1_"<<avoidance_objects[var] <<std::endl;
+
+        boost::shared_ptr<SignalPtrVector> p2_signal  = SignalHelper::createInputSignalVector("p2_"+avoidance_objects[var]);
+        signalRegistration(*p2_signal );
+        p2_vec[var] = p2_signal;
+        std::cerr << "registered p1 signal: p2_"<<avoidance_objects[var] <<std::endl;
+
+        boost::shared_ptr<SignalPtrMatrix> jVel_signal  = SignalHelper::createInputSignalMatrix("jVel_"+avoidance_objects[var]);
+        signalRegistration(*jVel_signal );
+        jVel_vec[var] = jVel_signal;
+        std::cerr << "registered p1 signal: jVel_"<<avoidance_objects[var] <<std::endl;
+
+        taskSOUT.addDependency(*p1_signal);
+        taskSOUT.addDependency(*p2_signal);
+
+        jacobianSOUT.addDependency(*p1_signal);
+        jacobianSOUT.addDependency(*p2_signal);
+        jacobianSOUT.addDependency(*jVel_signal);
+
+    }
+
 }
 
 /* ---------------------------------------------------------------------- */
 /* --- COMPUTATION ------------------------------------------------------ */
 /* ---------------------------------------------------------------------- */
 
-ml::Vector TaskVelocityDamping::calculateDirectionalVector(sot::MatrixHomogeneous p1, sot::MatrixHomogeneous p2){
-    sot::MatrixHomogeneous diff;
+ml::Vector TaskVelocityDamping::calculateDirectionalVector(dynamicgraph::Vector p1, dynamicgraph::Vector p2){
+    dynamicgraph::Vector diff;
     diff = p1.substraction(p2);
-    ml::Vector dist_vec(3);
-    return diff.extract(dist_vec);
+    return diff;
 }
 
-ml::Vector TaskVelocityDamping::calculateUnitVector(sot::MatrixHomogeneous p1, sot::MatrixHomogeneous p2){
+ml::Vector TaskVelocityDamping::calculateUnitVector(dynamicgraph::Vector p1, dynamicgraph::Vector p2){
 
     ml::Vector n(3);
     double d = calculateDistance(p1, p2);
@@ -173,7 +167,7 @@ ml::Vector TaskVelocityDamping::calculateUnitVector(sot::MatrixHomogeneous p1, s
     return n;
 }
 
-double TaskVelocityDamping::calculateDistance(sot::MatrixHomogeneous p1, sot::MatrixHomogeneous p2){
+double TaskVelocityDamping::calculateDistance(dynamicgraph::Vector p1, dynamicgraph::Vector p2){
     ml::Vector dist_vec = calculateDirectionalVector(p1, p2);
     double distnorm = dist_vec.norm();
     return distnorm;
@@ -181,49 +175,87 @@ double TaskVelocityDamping::calculateDistance(sot::MatrixHomogeneous p1, sot::Ma
 
 dg::sot::VectorMultiBound& TaskVelocityDamping::computeTask( dg::sot::VectorMultiBound& res,int time )
 {
+    // first time initialization or reaction if more objects are coming
+    if (res.size() != avoidance_size_){
+        res.resize(avoidance_size_);
+    }
     const double& ds = dsSIN(time);
     const double& di = diSIN(time);
 //    const double& dt = dtSIN(time);
     double epsilon = controlGainSIN(time);
 
-    MultiBound::SupInfType bound = MultiBound::BOUND_INF;
-    double d;
-    computeDistance(d, time);
+    for (int var = 0; var < avoidance_size_; ++var) {
 
-    distanceSOUT.setConstant(d);
-    double upperFrac =  d-ds;
-    double lowerFrac =  (di-ds);
-    double fraction = - epsilon *(upperFrac / lowerFrac);
+        const dynamicgraph::Vector& p1 = (*p1_vec[var])(time);
+        const dynamicgraph::Vector& p2 = (*p2_vec[var])(time);
 
-    res.resize(1);
-    res[0] = dg::sot::MultiBound(fraction, bound);
+        MultiBound::SupInfType bound = MultiBound::BOUND_INF;
+        double d = calculateDistance(p1, p2);
+        double upperFrac =  d-ds;
+        double lowerFrac =  di-ds;
+        double fraction = - epsilon *(upperFrac / lowerFrac);
 
+        res[var] = dg::sot::MultiBound(fraction, bound);
+    }
     return res;
 }
 
 ml::Matrix& TaskVelocityDamping::
 computeJacobian( ml::Matrix& J,int time )
 {
-    const ml::Matrix& jacobian = jVelSIN(time);
+
+    // output Jacobian has <avoidance_size> x < jacobian.nbCols()>
+    const int col_count = (*jVel_vec[0])(time).nbCols();
+    if (J.nbCols() != col_count ){
+        J.resize(avoidance_size_,col_count);
+    }
+    if (J.nbRows() != avoidance_size_){
+        J.resize(avoidance_size_,col_count);
+    }
+
+//    std::cerr << "jacobian dimension: " << J.nbRows() << " x " << J.nbCols() << std::endl;
+    // use first jVel signal to resize matrix
+    // then matrix can easily be stacked into each other
+    // cannot use mal:: stackMatrix because it's not implemented
+    for (int var = 0; var < avoidance_size_; ++var) {
+
+        const dynamicgraph::Vector& p1 = (*p1_vec[var])(time);
+        const dynamicgraph::Vector& p2 = (*p2_vec[var])(time);
+        const ml::Matrix& jacobian = (*jVel_vec[var])(time);
+
+        ml::Vector mat_n = calculateUnitVector(p1,p2);
+
+        ml::Matrix mat_n_transpose(1,mat_n.size());
+        for (unsigned int i=0; i<mat_n.size(); ++i){
+            mat_n_transpose(0,i) = mat_n(i);
+        }
+        // extract only position information
+        ml::Matrix jacobianPos;
+        jacobian.extract(0,0,3,jacobian.nbCols(), jacobianPos);
+
+        ml::Matrix partJacobian;
+        partJacobian = mat_n_transpose.multiply(jacobianPos);
+
+        for (int jIdx = 0; jIdx < col_count; ++jIdx) {
+            J.elementAt(var, jIdx) = partJacobian.elementAt(0,jIdx);
+        }
+
+    }
+    return J;
 
     /* original paper implementation */
 
-    ml::Vector dist_v;
-    computeV(dist_v, time);
+//    ml::Vector dist_v;
+//    computeV(dist_v, time);
 
-    ml::Vector mat_n;
-    computeN(mat_n, time);
+//    ml::Vector mat_n;
+//    computeN(mat_n, time);
 
-    ml::Matrix mat_n_transpose(1,dist_v.size());
-    for (unsigned int i=0; i<mat_n.size(); ++i){
-        mat_n_transpose(0,i) = mat_n(i);
-    }
-    // extract only position information
-    ml::Matrix jacobianPos;
-    jacobian.extract(0,0,3,jacobian.nbCols(), jacobianPos);
 
-    J=mat_n_transpose.multiply(jacobianPos);
-    return J;
+//    J=mat_n_transpose.multiply(jacobianPos);
+
+//    std::cout << "taskvelocitydamping jacobian triggered" << std::endl;
+
 }
 
 /* ------------------------------------------------------------------------ */
