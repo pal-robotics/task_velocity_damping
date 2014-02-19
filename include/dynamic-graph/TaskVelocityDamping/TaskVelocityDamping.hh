@@ -70,19 +70,27 @@ public:  /* --- COMPUTATION --- */
 private:
 
     // input signals for P1
-    std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Vector, int> > > p1_vec;
+    std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Matrix, int> > > p1_vec;
     // input signals for p2
-    std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Vector, int> > > p2_vec;
+    std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Matrix, int> > > p2_vec;
     // input signals for jacobians of p1
     std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Matrix, int> > > jVel_vec;
+
+    // output signals for n and distance
+    std::vector<boost::shared_ptr< SignalTimeDependent <dynamicgraph::Vector, int> > > n_vec;
+    std::vector<boost::shared_ptr< SignalTimeDependent <dynamicgraph::Vector, int> > > v_vec;
+    std::vector<boost::shared_ptr< SignalTimeDependent <double, int> > > d_vec;
 
     void split(std::vector<std::string> &tokens, const std::string &text, char sep) const;
 
     void set_avoiding_objects(const std::string& avoiding_objects);
 
-    double calculateDistance(dynamicgraph::Vector p1, dynamicgraph::Vector p2);
-    ml::Vector calculateDirectionalVector(dynamicgraph::Vector p1,dynamicgraph::Vector p2);
-    ml::Vector calculateUnitVector(dynamicgraph::Vector p1,dynamicgraph::Vector p2);
+//    double& calculateDistanceSignal(double& d_sig, int i);
+//    ml::Vector& calculateUnitVectorSignal(dynamicgraph::Vector res, int i);
+
+    double calculateDistance(sot::MatrixHomogeneous p1, sot::MatrixHomogeneous p2);
+    ml::Vector calculateDirectionalVector(sot::MatrixHomogeneous p1,sot::MatrixHomogeneous p2);
+    ml::Vector calculateUnitVector(sot::MatrixHomogeneous p1,sot::MatrixHomogeneous p2);
 
     int avoidance_size_;
 }; // class TaskVelocityDamping
