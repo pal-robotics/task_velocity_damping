@@ -7,13 +7,13 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 project(task_velocity_damping)
 
-find_package(catkin REQUIRED COMPONENTS)
+find_package(catkin REQUIRED COMPONENTS sot_transform tf2)
 find_package(PkgConfig REQUIRED)
 
 catkin_package(
 	INCLUDE_DIRS include
 	LIBRARIES task_velocity_damping
-	DEPENDS jrl-mathtools jrl-mal dynamic-graph dynamic-graph-python sot-core
+	DEPENDS sot_transform jrl-mathtools jrl-mal dynamic-graph dynamic-graph-python sot-core tf2
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})

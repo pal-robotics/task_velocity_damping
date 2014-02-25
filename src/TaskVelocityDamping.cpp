@@ -29,8 +29,11 @@
 #include <dynamic-graph/factory.h>
 
 #include <sot/core/matrix-homogeneous.hh>
+#include <sot/core/matrix-rotation.hh>
 #include <dynamic-graph/TaskVelocityDamping/TaskVelocityDamping.hh>
 #include <dynamic-graph/TaskVelocityDamping/SignalHelper.h>
+
+#include <tf/transform_datatypes.h>
 
 /* --------------------------------------------------------------------- */
 /* --- CLASS ----------------------------------------------------------- */
@@ -66,12 +69,14 @@ for Non-strictly Convex Polyhedra
 TaskVelocityDamping::TaskVelocityDamping( const std::string & name )
     : TaskAbstract(name)
 
-//    p1 is considered as the moving point
-//    p2 is considered as being fixed/static
+    //    p1 is considered as the moving point
+    //    p2 is considered as being fixed/static
     ,CONSTRUCT_SIGNAL_IN(dt,double)
     ,CONSTRUCT_SIGNAL_IN(controlGain,double)
     ,CONSTRUCT_SIGNAL_IN(di, double)
     ,CONSTRUCT_SIGNAL_IN(ds, double)
+    , sot_transformer_(new SotFrameTransformer()),
+      br_()
 
 {
 
@@ -106,6 +111,7 @@ void TaskVelocityDamping::split(std::vector<std::string> &tokens, const std::str
 }
 
 
+
 void TaskVelocityDamping::set_avoiding_objects(const std::string& avoiding_objects_string)
 {
     std::cerr << "received avoiding objects: " << avoiding_objects_string <<std::endl;
@@ -113,7 +119,10 @@ void TaskVelocityDamping::set_avoiding_objects(const std::string& avoiding_objec
     split(avoidance_objects, avoiding_objects_string, ':');
     std::cerr << "will register objects: " << avoidance_objects.size();
 
+    avoidance_objects_vec = avoidance_objects;
     avoidance_size_  = avoidance_objects.size();
+
+    sot_transformer_->initVectorSize(avoidance_size_);
     p1_vec.resize(avoidance_size_);
     p2_vec.resize(avoidance_size_);
     jVel_vec.resize(avoidance_size_);
@@ -122,6 +131,8 @@ void TaskVelocityDamping::set_avoiding_objects(const std::string& avoiding_objec
     d_vec.resize(avoidance_size_);
 
     for (int var = 0; var < avoidance_size_; ++var) {
+
+        sot_transformer_->setSOTFrameTransform(avoidance_objects[var], var);
 
         boost::shared_ptr<SignalPtrMatrix> p1_signal  = SignalHelper::createInputSignalMatrix("p1_"+avoidance_objects[var]);
         signalRegistration(*p1_signal );
@@ -197,7 +208,7 @@ dg::sot::VectorMultiBound& TaskVelocityDamping::computeTask( dg::sot::VectorMult
     }
     const double& ds = dsSIN(time);
     const double& di = diSIN(time);
-//    const double& dt = dtSIN(time);
+    //    const double& dt = dtSIN(time);
     double epsilon = controlGainSIN(time);
 
     for (int var = 0; var < avoidance_size_; ++var) {
@@ -230,7 +241,7 @@ computeJacobian( ml::Matrix& J,int time )
         J.resize(avoidance_size_,col_count);
     }
 
-//    std::cerr << "jacobian dimension: " << J.nbRows() << " x " << J.nbCols() << std::endl;
+    //    std::cerr << "jacobian dimension: " << J.nbRows() << " x " << J.nbCols() << std::endl;
     // use first jVel signal to resize matrix
     // then matrix can easily be stacked into each other
     // cannot use mal:: stackMatrix because it's not implemented
@@ -238,19 +249,41 @@ computeJacobian( ml::Matrix& J,int time )
 
         const sot::MatrixHomogeneous& p1 = (*p1_vec[var])(time);
         const sot::MatrixHomogeneous& p2 = (*p2_vec[var])(time);
+
+        // adjust coordinates for correct directional unit vector computation!
+        // critical
+
+//        br_.sendTransform(
+//                    tf::StampedTransform(transformToTF(p1), ros::Time::now(), "base_link",
+//                                         "taskDAMP_p1in_"+avoidance_objects_vec[var]));
+//        br_.sendTransform(
+//                    tf::StampedTransform(transformToTF(p2), ros::Time::now(), "base_link",
+//                                         "taskDAMP_p2in_"+avoidance_objects_vec[var]));
+
+
         const ml::Matrix& jacobian = (*jVel_vec[var])(time);
 
         ml::Vector mat_n = calculateUnitVector(p1,p2);
         ml::Vector v = calculateDirectionalVector(p1, p2);
 
+
+
         // CHECK VIA TF THAT THIS MAT_N IS COMPUTED CORRECTLY INSIDE THE SOT CALCULATION
 
         // BRUTAL HACK !!!!!
-        v.elementAt(1) = v.elementAt(1)*-1;
-        v.elementAt(2) = v.elementAt(2)*-1;
+        if (avoidance_objects_vec[var].find("right") != std::string::npos){
+            v.elementAt(1) = v.elementAt(1)*-1;
+            v.elementAt(2) = v.elementAt(2)*-1;
 
-        mat_n.elementAt(1) = mat_n.elementAt(1)*(-1);
-        mat_n.elementAt(2) = mat_n.elementAt(2)*(-1);
+            mat_n.elementAt(1) = mat_n.elementAt(1)*(-1);
+            mat_n.elementAt(2) = mat_n.elementAt(2)*(-1);
+        }else{
+            v.elementAt(0) = v.elementAt(0)*-1;
+            mat_n.elementAt(0) = mat_n.elementAt(0)*(-1);
+        }
+//        br_.sendTransform(
+//                    tf::StampedTransform(transformToTF(v), ros::Time::now(), "taskDAMP_p2in_"+avoidance_objects_vec[var],
+//                                         "taskDAMP_v_"+avoidance_objects_vec[var]));
 
         v_vec[var]->setConstant(v);
         n_vec[var]->setConstant(mat_n);

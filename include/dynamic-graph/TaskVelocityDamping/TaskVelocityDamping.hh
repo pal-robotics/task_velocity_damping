@@ -32,6 +32,9 @@
 
 #include <iostream>
 
+#include <sot_transform/sot_frame_transform.h>
+#include <tf/transform_broadcaster.h>
+
 namespace dynamicgraph {
 namespace sot {
 
@@ -69,6 +72,8 @@ public:  /* --- COMPUTATION --- */
 
 private:
 
+    boost::shared_ptr<SotFrameTransformer> sot_transformer_;
+
     // input signals for P1
     std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Matrix, int> > > p1_vec;
     // input signals for p2
@@ -93,7 +98,57 @@ private:
     ml::Vector calculateUnitVector(sot::MatrixHomogeneous p1,sot::MatrixHomogeneous p2);
 
     int avoidance_size_;
+    std::vector<std::string> avoidance_objects_vec;
+
+    tf::TransformBroadcaster br_;
+
 }; // class TaskVelocityDamping
+
+inline tf::Transform transformToTF(const dynamicgraph::Vector& vector)
+{
+    tf::Transform transform;
+    transform.setIdentity();
+
+    tf::Vector3 pos;
+    pos.setValue(vector.elementAt(0),vector.elementAt(1),vector.elementAt(2));
+    transform.setOrigin(pos);
+    return transform;
+}
+
+inline tf::Transform transformToTF(const dynamicgraph::Matrix& matrix){
+    tf::Transform transform;
+
+    tf::Matrix3x3 rot;
+    rot.setValue(
+                matrix.elementAt(0,0),
+                matrix.elementAt(0,1),
+                matrix.elementAt(0,2),
+
+                matrix.elementAt(1,0),
+                matrix.elementAt(1,1),
+                matrix.elementAt(1,2),
+
+                matrix.elementAt(2,0),
+                matrix.elementAt(2,1),
+                matrix.elementAt(2,2)
+
+    );
+
+    tf::Vector3 pos;
+    pos.setValue(matrix.elementAt(0,3),matrix.elementAt(1,3),matrix.elementAt(2,3));
+
+    tf::Quaternion quat;
+    rot.getRotation(quat);
+
+
+    // check that!!
+    transform.setRotation(quat);
+    transform.setOrigin(pos);
+
+    return transform;
+}
+
+
 
 } // namespace sot
 } // namespace dynamicgraph
