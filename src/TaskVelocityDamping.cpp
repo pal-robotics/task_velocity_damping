@@ -75,8 +75,8 @@ TaskVelocityDamping::TaskVelocityDamping( const std::string & name )
     ,CONSTRUCT_SIGNAL_IN(controlGain,double)
     ,CONSTRUCT_SIGNAL_IN(di, double)
     ,CONSTRUCT_SIGNAL_IN(ds, double)
-    , sot_transformer_(new SotFrameTransformer()),
-      br_()
+//    , sot_transformer_(new SotFrameTransformer())
+     , br_()
 
 {
 
@@ -122,7 +122,7 @@ void TaskVelocityDamping::set_avoiding_objects(const std::string& avoiding_objec
     avoidance_objects_vec = avoidance_objects;
     avoidance_size_  = avoidance_objects.size();
 
-    sot_transformer_->initVectorSize(avoidance_size_);
+//    sot_transformer_->initVectorSize(avoidance_size_);
     p1_vec.resize(avoidance_size_);
     p2_vec.resize(avoidance_size_);
     jVel_vec.resize(avoidance_size_);
@@ -132,7 +132,7 @@ void TaskVelocityDamping::set_avoiding_objects(const std::string& avoiding_objec
 
     for (int var = 0; var < avoidance_size_; ++var) {
 
-        sot_transformer_->setSOTFrameTransform(avoidance_objects[var], var);
+//        sot_transformer_->setSOTFrameTransform(avoidance_objects[var], var);
 
         boost::shared_ptr<SignalPtrMatrix> p1_signal  = SignalHelper::createInputSignalMatrix("p1_"+avoidance_objects[var]);
         signalRegistration(*p1_signal );

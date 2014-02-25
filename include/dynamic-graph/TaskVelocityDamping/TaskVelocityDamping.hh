@@ -32,7 +32,7 @@
 
 #include <iostream>
 
-#include <sot_transform/sot_frame_transform.h>
+//#include <sot_transform/sot_frame_transform.h>
 #include <tf/transform_broadcaster.h>
 
 namespace dynamicgraph {
@@ -72,7 +72,7 @@ public:  /* --- COMPUTATION --- */
 
 private:
 
-    boost::shared_ptr<SotFrameTransformer> sot_transformer_;
+//    boost::shared_ptr<SotFrameTransformer> sot_transformer_;
 
     // input signals for P1
     std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Matrix, int> > > p1_vec;
