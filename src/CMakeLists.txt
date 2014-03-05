@@ -18,7 +18,12 @@ dynamic_graph_python_module("sot/core/${PROJECT_NAME}"
     sot/core/${PROJECT_NAME}/wrap
 )
 
-PYTHON_INSTALL("dynamic_graph/sot/core/${PROJECT_NAME}" "__init__.py" "${PYTHON_SITELIB}")
+SET(NEW_ENTITY_CLASS
+TaskVelocityDamping
+  )
+
+
+#PYTHON_INSTALL("dynamic_graph/sot/core/${PROJECT_NAME}" "__init__.py" "${PYTHON_SITELIB}")
 PYTHON_INSTALL_ON_SITE("dynamic_graph/sot/core" "meta_task_velocity_damping.py")
 PYTHON_INSTALL_ON_SITE("dynamic_graph/sot/core" "meta_task_dynamic_velocity_damping.py")
 PYTHON_INSTALL_ON_SITE("dynamic_graph/sot/core" "meta_task_opmod_velocity_damping.py")
