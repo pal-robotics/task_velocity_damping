@@ -189,7 +189,12 @@ ml::Vector TaskVelocityDamping::calculateUnitVector(sot::MatrixHomogeneous p1, s
     n = calculateDirectionalVector(p1, p2);
     n = n.multiply(float(1/d));
     // check for correct computation of normalization
-    assert(fabs(n.norm()-1.0) < 0.01);
+    if(fabs(n.norm()-1.0) > 0.01) // the norm should be in the tolerance
+    {
+        std::cerr << "difference" << fabs(n.norm()-1.0) << std::endl;
+        std::cerr << "something fishy with n-vector "<< n << std::endl;
+    }
+
 
     return n;
 }
