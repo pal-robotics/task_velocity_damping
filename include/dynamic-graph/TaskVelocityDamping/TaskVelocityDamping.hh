@@ -60,15 +60,15 @@ public:  /* --- SIGNALS --- */
 
     DECLARE_SIGNAL_IN(dt,double);
     DECLARE_SIGNAL_IN(controlGain,double);
-    DECLARE_SIGNAL_IN(di,double);
-    DECLARE_SIGNAL_IN(ds,double);
-//    DECLARE_SIGNAL_OUT(activeSize,int);
 
 public:  /* --- COMPUTATION --- */
 
-
     dg::sot::VectorMultiBound& computeTask( dg::sot::VectorMultiBound& res,int time );
     ml::Matrix& computeJacobian( ml::Matrix& J,int time );
+
+    void setAvoidingObjects(const std::string& avoiding_objects);
+    void setAvoidingObjectPair(const std::string& p1, const std::string& p2);
+    void finalizeSignals();
 
 private:
 
@@ -80,6 +80,10 @@ private:
     std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Matrix, int> > > p2_vec;
     // input signals for jacobians of p1
     std::vector<boost::shared_ptr< SignalPtr <dynamicgraph::Matrix, int> > > jVel_vec;
+    // input signals for influence distance
+    std::vector<boost::shared_ptr< SignalPtr <double, int> > > di_vec;
+    // input signals for influence distance
+    std::vector<boost::shared_ptr< SignalPtr <double, int> > > ds_vec;
 
     // output signals for n and distance
     std::vector<boost::shared_ptr< SignalTimeDependent <dynamicgraph::Vector, int> > > n_vec;
@@ -88,17 +92,15 @@ private:
 
     void split(std::vector<std::string> &tokens, const std::string &text, char sep) const;
 
-    void set_avoiding_objects(const std::string& avoiding_objects);
-
-//    double& calculateDistanceSignal(double& d_sig, int i);
-//    ml::Vector& calculateUnitVectorSignal(dynamicgraph::Vector res, int i);
 
     double calculateDistance(sot::MatrixHomogeneous p1, sot::MatrixHomogeneous p2);
     ml::Vector calculateDirectionalVector(sot::MatrixHomogeneous p1,sot::MatrixHomogeneous p2);
     ml::Vector calculateUnitVector(sot::MatrixHomogeneous p1,sot::MatrixHomogeneous p2);
 
     int avoidance_size_;
-    std::vector<std::string> avoidance_objects_vec;
+    std::vector<std::string> avoidance_objects_;
+
+    std::vector<std::string> collision_pair_names_;
 
     tf::TransformBroadcaster br_;
 
@@ -148,10 +150,9 @@ inline tf::Transform transformToTF(const dynamicgraph::Matrix& matrix){
     return transform;
 }
 
-
-
 } // namespace sot
 } // namespace dynamicgraph
+
 
 
 #endif // #ifndef __sot_TaskVelocityDamping_H__

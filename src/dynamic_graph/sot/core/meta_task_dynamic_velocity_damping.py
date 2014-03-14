@@ -9,9 +9,7 @@ from matrix_util import matrixToTuple
 class MetaTaskDynamicVelocityDamping(object):
     name=''
     dyn=0
-    task=0       
-    _ds = 0
-    _di = 0
+    task=0   
     controlGain = 0
     
     def createTask(self):
@@ -32,15 +30,11 @@ class MetaTaskDynamicVelocityDamping(object):
         return len(sigsP)==1 & len(sigsJ)==1
 
     def plugEverything(self):
-        self.task.di.value = self._di
-        self.task.ds.value = self._ds
         self.task.controlGain.value = self.controlGain
         self.task.dt.value = 0.001
         
-    def __init__(self,name, di, ds, controlGain=1):
+    def __init__(self,name, controlGain=1):
         self.name='taskDynamicVelocity'+str(name)
-        self._ds = ds
-        self._di = di
         self.controlGain = controlGain
         self.createTask()
         self.plugEverything()

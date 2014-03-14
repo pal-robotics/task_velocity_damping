@@ -14,22 +14,28 @@ namespace SignalHelper{
 typedef SignalTimeDependent < sot::MatrixHomogeneous, int > SignalTimeMatrix;
 typedef SignalTimeDependent < dynamicgraph::Vector, int > SignalTimeVector;
 typedef SignalTimeDependent < double, int > SignalTimeDouble;
-typedef SignalPtr<dynamicgraph::Vector, int > SignalPtrVector;
+
 typedef SignalPtr<dynamicgraph::Matrix, int > SignalPtrMatrix;
+typedef SignalPtr<dynamicgraph::Vector, int > SignalPtrVector;
+typedef SignalPtr<double, int > SignalPtrDouble;
 
-inline boost::shared_ptr<SignalTimeDouble> createOutputSignalTimeDouble(std::string name){
 
-    std::string signal_name = "TaskVelocityDamping(taskDynamicVelocityvelDamp)::output(double)::"+name;
-    boost::shared_ptr<SignalTimeDouble> signal =  boost::shared_ptr<SignalTimeDouble>(
-                new SignalTimeDouble(NULL, signal_name));
-    return signal;
-}
+/*TEMPLATING HERE*/
+
 
 inline boost::shared_ptr<SignalTimeVector> createOutputSignalTimeVector(std::string name){
 
     std::string signal_name = "TaskVelocityDamping(taskDynamicVelocityvelDamp)::output(vector)::"+name;
     boost::shared_ptr<SignalTimeVector> signal =  boost::shared_ptr<SignalTimeVector>(
                 new SignalTimeVector(NULL, signal_name));
+    return signal;
+}
+
+inline boost::shared_ptr<SignalTimeDouble> createOutputSignalTimeDouble(std::string name){
+
+    std::string signal_name = "TaskVelocityDamping(taskDynamicVelocityvelDamp)::output(double)::"+name;
+    boost::shared_ptr<SignalTimeDouble> signal =  boost::shared_ptr<SignalTimeDouble>(
+                new SignalTimeDouble(NULL, signal_name));
     return signal;
 }
 
@@ -44,6 +50,13 @@ inline boost::shared_ptr<SignalPtrVector> createInputSignalVector(std::string na
     std::string signal_name = "TaskVelocityDamping(taskDynamicVelocityvelDamp)::input(vector)::"+name;
     boost::shared_ptr<SignalPtrVector> signal = boost::shared_ptr<SignalPtrVector> (
                 new SignalPtrVector(NULL, signal_name));
+    return signal;
+}
+
+inline boost::shared_ptr<SignalPtrDouble> createInputSignalDouble(std::string name){
+    std::string signal_name = "TaskVelocityDamping(taskDynamicVelocityvelDamp)::input(double)::"+name;
+    boost::shared_ptr<SignalPtrDouble> signal = boost::shared_ptr<SignalPtrDouble> (
+                new SignalPtrDouble(NULL, signal_name));
     return signal;
 }
 
