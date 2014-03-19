@@ -331,22 +331,28 @@ computeJacobian( ml::Matrix& J,int time )
         ml::Vector mat_n = calculateUnitVector(p1,p2);
         ml::Vector v = calculateDirectionalVector(p1, p2);
 
+
         // CHECK VIA TF THAT THIS MAT_N IS COMPUTED CORRECTLY INSIDE THE SOT CALCULATION
         // BRUTAL HACK !!!!!
         size_t rightpos = collision_pair_names_[idx].find("right");
         size_t leftpos = collision_pair_names_[idx].find("left");
 
-        if (rightpos != std::string::npos && rightpos < leftpos){
-            v.elementAt(1) = v.elementAt(1)*-1;
-            v.elementAt(2) = v.elementAt(2)*-1;
+        // if (right and no left) or (right and left and right < left)
+        if ( (rightpos != std::string::npos && leftpos == std::string::npos)
+             ||
+             (rightpos != std::string::npos && leftpos != std::string::npos && rightpos < leftpos) )
+        {
+                v.elementAt(1) = v.elementAt(1)*-1;
+                v.elementAt(2) = v.elementAt(2)*-1;
 
-            mat_n.elementAt(1) = mat_n.elementAt(1)*(-1);
-            mat_n.elementAt(2) = mat_n.elementAt(2)*(-1);
+                mat_n.elementAt(1) = mat_n.elementAt(1)*(-1);
+                mat_n.elementAt(2) = mat_n.elementAt(2)*(-1);
         }
-//        else{
-//            v.elementAt(0) = v.elementAt(0)*-1;
-//            mat_n.elementAt(0) = mat_n.elementAt(0)*(-1);
-//        }
+        else{
+            v.elementAt(0) = v.elementAt(0)*-1;
+            mat_n.elementAt(0) = mat_n.elementAt(0)*(-1);
+        }
+
         //        br_.sendTransform(
         //                    tf::StampedTransform(transformToTF(v), ros::Time::now(), "taskDAMP_p2in_"+avoidance_objects_vec[var],
         //                                         "taskDAMP_v_"+avoidance_objects_vec[var]));
