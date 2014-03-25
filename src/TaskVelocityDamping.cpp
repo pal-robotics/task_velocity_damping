@@ -336,23 +336,27 @@ computeJacobian( ml::Matrix& J,int time )
         // BRUTAL HACK !!!!!
         size_t rightpos = collision_pair_names_[idx].find("right");
         size_t leftpos = collision_pair_names_[idx].find("left");
+        size_t endeffector = collision_pair_names_[idx].find("tool");
 
-        // if (right and no left) or (right and left and right < left)
-        if ( (rightpos != std::string::npos && leftpos == std::string::npos)
-             ||
-             (rightpos != std::string::npos && leftpos != std::string::npos && rightpos < leftpos) )
-        {
+        // exclude endeffector as this is not getting parsed by jrl
+        if (endeffector == std::string::npos){
+
+            // if (right and no left) or (right and left and right < left)
+            if ( (rightpos != std::string::npos && leftpos == std::string::npos)
+                 ||
+                 (rightpos != std::string::npos && leftpos != std::string::npos && rightpos < leftpos) )
+            {
                 v.elementAt(1) = v.elementAt(1)*-1;
                 v.elementAt(2) = v.elementAt(2)*-1;
 
                 mat_n.elementAt(1) = mat_n.elementAt(1)*(-1);
                 mat_n.elementAt(2) = mat_n.elementAt(2)*(-1);
+            }
+            else{
+                v.elementAt(0) = v.elementAt(0)*-1;
+                mat_n.elementAt(0) = mat_n.elementAt(0)*(-1);
+            }
         }
-        else{
-            v.elementAt(0) = v.elementAt(0)*-1;
-            mat_n.elementAt(0) = mat_n.elementAt(0)*(-1);
-        }
-
         //        br_.sendTransform(
         //                    tf::StampedTransform(transformToTF(v), ros::Time::now(), "taskDAMP_p2in_"+avoidance_objects_vec[var],
         //                                         "taskDAMP_v_"+avoidance_objects_vec[var]));
