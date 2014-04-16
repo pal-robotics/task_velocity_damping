@@ -4,7 +4,7 @@
 #
 
 # LAAS cmake include for python 
-include(../cmake/python.cmake)
+include(${SOT_CMAKE_DIR}/python.cmake)
 FINDPYTHON()
 set(LIBRARY_OUTPUT_PATH ${CATKIN_DEVEL_PREFIX}/lib)
 
